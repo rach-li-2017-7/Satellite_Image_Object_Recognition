@@ -24,6 +24,7 @@ fastapi==0.95.2
 uvicorn==0.23.1
 python-multipart==0.0.6
 pillow==9.5.0
-segmentation-models-pytorch==0.3.0
+segmentation-models-pytorch==0.3.4
 torch==2.0.1
 torchvision==0.15.2
+python-multipart==0.0.6
