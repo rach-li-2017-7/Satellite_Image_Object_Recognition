@@ -3,20 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Segmentation API</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Image Upload</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Upload Files for Segmentation</h1>
-    <form id="upload-form" enctype="multipart/form-data">
-        <label for="tif">TIFF File:</label>
-        <input type="file" id="tif" name="tif" accept=".tif" required>
-        <label for="jpg">JPG File:</label>
-        <input type="file" id="jpg" name="jpg" accept=".jpg" required>
-        <button type="submit">Upload</button>
-    </form>
-    <h2>Result:</h2>
-    <img id="result-image" src="" alt="Result will appear here">
-    <script src="script.js"></script>
+    <div class="container">
+        <h1>Upload Files</h1>
+        <form id="upload-form" enctype="multipart/form-data">
+            <label for="tif">Upload TIFF File:</label>
+            <input type="file" name="tif" accept=".tif" required><br><br>
+            <label for="jpg">Upload JPG File:</label>
+            <input type="file" name="jpg" accept=".jpg" required><br><br>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="result">
+            <h2>Processed Image:</h2>
+            <img id="result-image" src="" alt="Processed Image" style="display:none;">
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
 </body>
 </html>

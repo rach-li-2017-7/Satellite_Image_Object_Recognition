@@ -1,26 +1,26 @@
-// Select elements
 const form = document.getElementById("upload-form");
+const resultDiv = document.getElementById("result");
 const resultImage = document.getElementById("result-image");
 
-// Add event listener for form submission
 form.addEventListener("submit", async (event) => {
-    event.preventDefault(); // Prevent default form submission behavior
+    event.preventDefault();
 
-    const formData = new FormData(form); // Collect form data
+    const formData = new FormData(form);
 
     try {
-        // Send files to the API
         const response = await fetch("/upload/", {
             method: "POST",
             body: formData,
         });
 
         if (response.ok) {
-            // Display the returned result image
             const blob = await response.blob();
-            resultImage.src = URL.createObjectURL(blob);
+            const imageUrl = URL.createObjectURL(blob);
+
+            // Display the result image
+            resultImage.src = imageUrl;
+            resultImage.style.display = "block";
         } else {
-            // Handle errors
             alert("Error uploading files. Please try again.");
         }
     } catch (error) {
