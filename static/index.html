@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Files</h1>
+        <form id="upload-form" enctype="multipart/form-data">
+            <label for="tif">Upload TIFF File:</label>
+            <input type="file" name="tif" accept=".tif" required><br><br>
+            <label for="jpg">Upload JPG File:</label>
+            <input type="file" name="jpg" accept=".jpg" required><br><br>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="result">
+            <h2>Processed Image:</h2>
+            <img id="result-image" src="" alt="Processed Image" style="display:none;">
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
