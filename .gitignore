@@ -1,1 +1,4 @@
+env/
 reference/
+backup/
+model/InceptionResNetV2-UNet.h5
