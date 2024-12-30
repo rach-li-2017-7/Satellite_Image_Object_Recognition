@@ -27,7 +27,7 @@ from utils.utils import get_label_mappings, conv_block, decoder_block, build_inc
 
 
 def process_and_save_masks(original_image_path, cad_image_path):
-    code2id, id2code, name2id, id2name = get_label_mappings()
+    class_dict_df, code2id, id2code, name2id, id2name = get_label_mappings()
 
     model = build_inception_resnetv2_unet(input_shape=(512, 512, 3))
     model.compile(optimizer=Adam(lr=0.0001), loss='categorical_crossentropy', 
@@ -54,7 +54,7 @@ def process_and_save_masks(original_image_path, cad_image_path):
                                       interpolation=cv2.INTER_NEAREST)
 
     # Filter the mask to keep only red (buildings) and blue (roads)
-    colors_to_keep = [(255, 0, 0), (0, 0, 255)]
+    colors_to_keep = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
     filtered_mask = filter_mask_colors(predicted_mask_resized, colors_to_keep)
 
     # Save the filtered mask as transparent PNG
@@ -93,4 +93,4 @@ def process_and_save_masks(original_image_path, cad_image_path):
 
 
 if __name__ == "__main__":
-    process_and_save_masks("upload/SerenityCloseUp_v0_20241229.jpg", "upload/SerenityCloseUp_v0_20241229.jpg")
+    process_and_save_masks("upload/SerenityCommunity1920By1280_v1_20241229.jpg", "upload/SerenityCloseUp_v0_20241229.jpg")

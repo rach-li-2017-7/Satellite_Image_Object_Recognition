@@ -57,7 +57,7 @@ def get_label_mappings(csv_path='input/class_dict.csv'):
     name2id = {v:k for k,v in enumerate(label_names)}
     id2name = {k:v for k,v in enumerate(label_names)}
     
-    return code2id, id2code, name2id, id2name
+    return class_dict_df, code2id, id2code, name2id, id2name
 
 
 def conv_block(input, num_filters):
