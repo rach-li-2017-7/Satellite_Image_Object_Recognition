@@ -27,6 +27,39 @@ from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, Activatio
 from tensorflow.keras.models import load_model
 
 
+def get_label_mappings(csv_path='input/class_dict.csv'):
+    """
+    Create mappings between label codes, IDs and names from class dictionary CSV.
+    
+    Args:
+        csv_path: Path to CSV file containing class definitions
+        
+    Returns:
+        code2id: Dict mapping RGB codes to class IDs
+        id2code: Dict mapping class IDs to RGB codes  
+        name2id: Dict mapping class names to IDs
+        id2name: Dict mapping class IDs to names
+    """
+    class_dict_df = pd.read_csv(csv_path, index_col=False, skipinitialspace=True)
+    
+    label_names = list(class_dict_df.name)
+    label_codes = []
+    r = np.asarray(class_dict_df.r)
+    g = np.asarray(class_dict_df.g) 
+    b = np.asarray(class_dict_df.b)
+    
+    for i in range(len(class_dict_df)):
+        label_codes.append(tuple([r[i], g[i], b[i]]))
+
+    code2id = {v:k for k,v in enumerate(label_codes)}
+    id2code = {k:v for k,v in enumerate(label_codes)}
+    
+    name2id = {v:k for k,v in enumerate(label_names)}
+    id2name = {k:v for k,v in enumerate(label_names)}
+    
+    return code2id, id2code, name2id, id2name
+
+
 def conv_block(input, num_filters):
     x = Conv2D(num_filters, 3, padding="same")(input)
     x = BatchNormalization()(x)
@@ -112,3 +145,97 @@ def onehot_to_rgb(onehot, colormap):
 
 def dice_coef(y_true, y_pred):
     return (2. * K.sum(y_true * y_pred) + 1.) / (K.sum(y_true) + K.sum(y_pred) + 1.)
+
+
+def filter_mask_colors(mask, colors_to_keep):
+    """
+    Filter a mask to keep only specified colors, setting all others to black.
+    
+    Args:
+        mask: numpy array of shape (height, width, 3) containing RGB values
+        colors_to_keep: list of RGB tuples to preserve, e.g. [(255, 0, 0), (0, 0, 255)]
+    
+    Returns:
+        filtered_mask: numpy array with same shape as input, with only specified colors preserved
+    """
+    filtered_mask = mask.copy()
+    
+    # Create combined boolean mask for all colors to keep
+    combined_mask = np.zeros(mask.shape[:2], dtype=bool)
+    for color in colors_to_keep:
+        color_mask = np.all(filtered_mask == color, axis=-1)
+        combined_mask = combined_mask | color_mask
+    
+    # Set all other pixels to black
+    filtered_mask[~combined_mask] = [0, 0, 0]
+    
+    return filtered_mask
+
+
+def convert_to_transparent_png(mask, output_path):
+    """
+    Convert an RGB mask to RGBA PNG with black (0,0,0) as transparent.
+    
+    Args:
+        mask: numpy array of shape (height, width, 3) containing RGB values
+        output_path: string, path where to save the PNG file
+    """
+    # Convert to RGBA with black as transparent
+    rgba_mask = np.zeros((*mask.shape[:2], 4))
+    rgba_mask[..., :3] = mask / 255.0  # Normalize RGB values to 0-1 range
+    
+    # Set alpha channel - make black pixels transparent
+    is_black = np.all(mask == [0, 0, 0], axis=-1)
+    rgba_mask[..., 3] = ~is_black  # Set alpha to 0 for black pixels, 1 for others
+    
+    # Save as PNG with transparency
+    plt.imsave(output_path, rgba_mask)
+
+
+def mask_images(image_path, mask_path, target_size):
+    """
+    Load and resize original image and filtered mask to target size.
+    
+    Args:
+        image_path: Path to original image
+        mask_path: Path to filtered mask image
+        target_size: Tuple of (height, width) for resizing
+    
+    Returns:
+        Tuple of (resized_original, resized_mask)
+    """
+    original_image = plt.imread(image_path)
+    filtered_mask = plt.imread(mask_path)
+    
+    # Resize both images (width, height for cv2.resize)
+    original_image = cv2.resize(original_image, target_size[::-1])
+    filtered_mask = cv2.resize(filtered_mask, target_size[::-1])
+    
+    return original_image, filtered_mask
+
+def display_image_with_mask(original_image, filtered_mask, figsize=(12,6)):
+    """
+    Display original image and masked overlay side by side.
+    
+    Args:
+        original_image: Original image array
+        filtered_mask: Mask image array
+        figsize: Figure size tuple, default (12,6)
+    """
+    plt.figure(figsize=figsize)
+    
+    # Display original image
+    plt.subplot(1, 2, 1)
+    plt.imshow(original_image)
+    plt.title('Original Image')
+    plt.axis('off')
+    
+    # Overlay mask on original image
+    plt.subplot(1, 2, 2)
+    plt.imshow(original_image)
+    plt.imshow(filtered_mask, alpha=0.5)
+    plt.title('Image with Filtered Mask Overlay')
+    plt.axis('off')
+    
+    plt.show()
+
