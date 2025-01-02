@@ -66,7 +66,24 @@ async def upload_files(original_image: UploadFile = File(...), cad_image: Upload
         result_origin_path = OUTPUT_DIR / "result_origin.jpg"
         result_cad_path = OUTPUT_DIR / "result_cad.jpg"
 
-        # Generate HTML to display images side by side
+        # Define paths for serving static files
+        static_original_image_path = STATIC_DIR / original_image.filename
+        static_cad_image_path = STATIC_DIR / cad_image.filename
+        static_result_origin_path = STATIC_DIR / result_origin_path.name
+        static_result_cad_path = STATIC_DIR / result_cad_path.name
+
+        # Remove existing files if they exist
+        for file_path in [static_original_image_path, static_cad_image_path, static_result_origin_path, static_result_cad_path]:
+            if file_path.exists():
+                os.remove(file_path)
+
+        # Copy files to static directory for serving
+        original_image_path.rename(static_original_image_path)
+        cad_image_path.rename(static_cad_image_path)
+        result_origin_path.rename(static_result_origin_path)
+        result_cad_path.rename(static_result_cad_path)
+
+        # Generate HTML to display images in the desired order
         result_html = f"""
         <!DOCTYPE html>
         <html>
@@ -77,8 +94,19 @@ async def upload_files(original_image: UploadFile = File(...), cad_image: Upload
             <h1>Processing Complete</h1>
             <div style="display: flex; justify-content: center; align-items: center; gap: 20px;">
                 <div>
+                    <h2>Uploaded Original Image</h2>
+                    <img src="/static/{original_image.filename}" alt="Uploaded Original Image" style="max-width: 500px;">
+                </div>
+                <div>
                     <h2>Original Image with Mask</h2>
                     <img src="/static/{result_origin_path.name}" alt="Result Origin" style="max-width: 500px;">
+                </div>
+            </div>
+            <br>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 20px;">
+                <div>
+                    <h2>Uploaded CAD Image</h2>
+                    <img src="/static/{cad_image.filename}" alt="Uploaded CAD Image" style="max-width: 500px;">
                 </div>
                 <div>
                     <h2>CAD Image with Mask</h2>
@@ -91,26 +119,14 @@ async def upload_files(original_image: UploadFile = File(...), cad_image: Upload
         </html>
         """
 
-        # Define the paths for the static output files
-        static_result_origin_path = STATIC_DIR / result_origin_path.name
-        static_result_cad_path = STATIC_DIR / result_cad_path.name
-
-        # Remove existing files if they exist
-        if static_result_origin_path.exists():
-            os.remove(static_result_origin_path)
-
-        if static_result_cad_path.exists():
-            os.remove(static_result_cad_path)
-
-        # Copy output files to the static directory for serving
-        result_origin_path.rename(static_result_origin_path)
-        result_cad_path.rename(static_result_cad_path)
-
         return HTMLResponse(content=result_html, status_code=200)
 
     except Exception as e:
         return HTMLResponse(content=f"An error occurred: {str(e)}", status_code=500)
-    
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     return PlainTextResponse(str(exc), status_code=500)
+
+
+
