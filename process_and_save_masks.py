@@ -1,47 +1,28 @@
 # import packages
-import pickle
 import numpy as np
-import pandas as pd
-from PIL import Image
-import albumentations as A
-from IPython.display import SVG
+import cv2
 import matplotlib.pyplot as plt
-import os, re, sys, random, shutil, cv2
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import backend as K
-from tensorflow.keras.models import Model
-from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam, Nadam
-from tensorflow.keras import applications, optimizers
-from tensorflow.keras.applications import InceptionResNetV2
-from tensorflow.keras.applications.resnet50 import preprocess_input
-from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
-from tensorflow.keras.utils import model_to_dot, plot_model
-from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, CSVLogger, LearningRateScheduler
-from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, Activation, MaxPool2D, Conv2DTranspose, Concatenate, ZeroPadding2D, Dropout
-from tensorflow.keras.models import load_model
+from utils.utils import get_label_mappings, onehot_to_rgb, filter_mask_colors, convert_to_transparent_png, mask_images
+from tensorflow.keras.models import load_model as keras_load_model
+from utils.utils import build_inception_resnetv2_unet
 
-# import utils
-from utils.utils import get_label_mappings, conv_block, decoder_block, build_inception_resnetv2_unet, rgb_to_onehot, onehot_to_rgb, dice_coef, filter_mask_colors, convert_to_transparent_png, mask_images, display_image_with_mask
+def load_model():
+    # Load the InceptionResNetV2-UNet model and its weights
+    model = build_inception_resnetv2_unet(input_shape=(512, 512, 3))
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    model.load_weights("model/InceptionResNetV2-UNet.h5")
+    return model
 
-
-def process_and_save_masks(original_image_path, cad_image_path):
+def process_and_save_masks(original_image_path, cad_image_path, model):
     class_dict_df, code2id, id2code, name2id, id2name = get_label_mappings()
 
-    model = build_inception_resnetv2_unet(input_shape=(512, 512, 3))
-    model.compile(optimizer=Adam(lr=0.0001), loss='categorical_crossentropy', 
-                 metrics=[dice_coef, "accuracy"])
-
-    model.load_weights("model/InceptionResNetV2-UNet.h5")
-
-    # Load and preprocess the image
+    # Load and preprocess the original image
     image = cv2.imread(original_image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_resized = cv2.resize(image, (512, 512))
     image_array = np.expand_dims(image_resized, axis=0) / 255.0
 
-    # Make prediction
+    # Make prediction with the pre-loaded model
     predicted_mask = model.predict(image_array)
 
     # Convert the predicted mask to RGB
@@ -50,8 +31,8 @@ def process_and_save_masks(original_image_path, cad_image_path):
     # Resize the predicted mask back to the original image dimensions
     original_height, original_width = image.shape[:2]
     predicted_mask_resized = cv2.resize(predicted_mask_rgb, 
-                                      (original_width, original_height),
-                                      interpolation=cv2.INTER_NEAREST)
+                                         (original_width, original_height),
+                                         interpolation=cv2.INTER_NEAREST)
 
     # Filter the mask to keep only red (buildings) and blue (roads)
     colors_to_keep = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
@@ -90,7 +71,3 @@ def process_and_save_masks(original_image_path, cad_image_path):
     plt.axis('off')
     plt.savefig('output/result_cad.jpg', bbox_inches='tight', pad_inches=0)
     plt.close()
-
-
-if __name__ == "__main__":
-    process_and_save_masks("upload/SerenityCommunity1920By1280_v1_20241229.jpg", "upload/SerenityCloseUp_v0_20241229.jpg")
